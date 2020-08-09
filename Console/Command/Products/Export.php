@@ -5,17 +5,17 @@
  */
 declare(strict_types=1);
 
-namespace JMC\Export\Console\Command\Categories;
+namespace JMC\Export\Console\Command\Products;
 
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
-use Magento\CatalogUrlRewrite\Model\CategoryUrlPathGenerator;
-use Magento\Catalog\Model\ResourceModel\Category\CollectionFactory;
+use Magento\Catalog\Api\CategoryRepositoryInterface;
+use Magento\CatalogUrlRewrite\Model\ProductUrlPathGenerator;
+use Magento\Catalog\Model\ResourceModel\Product\CollectionFactory;
 use Magento\Framework\File\Csv;
-use Magento\Store\Model\StoreManagerInterface;
 
 /**
  * Export Categories in a CSV file with the next format:
@@ -33,44 +33,41 @@ class Export extends Command
     private $csv;
 
     /**
-     * @var Magento\Catalog\Model\ResourceModel\Category\CollectionFactory
+     * @var Magento\Catalog\Model\ResourceModel\Product\CollectionFactory
      */
     private $collection;
 
     /**
-     * @var CategoryUrlPathGenerator
+     * @var ProductUrlPathGenerator
      */
-    private $categoryUrlPathGenerator;
-    
-    /**
-     * @var string
-     */
-    private $storeId = null;
+    private $productUrlPathGenerator;
 
     /**
-     * @var StoreManagerInterface
+     * @var StoreManager
      */
-    private $storeManager;
+    private $store;
+    
+   	/**
+   	 * @var string
+   	 */
+   	private $storeId = null;
 
     /**
      * @param CollectionFactory $collectionFactory
      * @param Csv $csv
-     * @param CategoryUrlPathGenerator $categoryUrlPathGenerator
-     * @param StoreManagerInterface $storeManager
+     * @param ProductUrlPathGenerator $productUrlPathGenerator
      * @param string $name
      */
     public function __construct(
         CollectionFactory $collectionFactory,
         Csv $csv,
-        CategoryUrlPathGenerator $categoryUrlPathGenerator,
-        StoreManagerInterface $storeManager,
+        ProductUrlPathGenerator $productUrlPathGenerator,
         string $name = null
     ) {
         parent::__construct($name);
         $this->collection = $collectionFactory;
-        $this->categoryUrlPathGenerator = $categoryUrlPathGenerator;
+        $this->productUrlPathGenerator = $productUrlPathGenerator;
         $this->csv = $csv;
-        $this->storeManager = $storeManager;
     }
 
     /**
@@ -78,8 +75,8 @@ class Export extends Command
      */
     protected function configure()
     {
-        $this->setName("jmc:export:categories");
-        $this->setDescription("Export categories in CSV file");
+        $this->setName("jmc:export:products");
+        $this->setDescription("Export products in CSV file");
         $this->addArgument('store', InputArgument::REQUIRED, __('Type a store ID'));
         parent::configure();
     }
@@ -95,17 +92,20 @@ class Export extends Command
         OutputInterface $output
     ) {
         $storeId = $input->getArgument('store');
-
+        
         if ($storeId) {
-            $this->storeId = $storeId;
-        }
-
-        $output->writeln("Exporting Categories... ");
-
-        try {
-            $this->exportCsvFile();
-        } catch (\Exception $e) {
-            $output->writeln($e->getMessage());
+        	$this->storeId = $storeId;
+        	$output->writeln("Exporting Products... ");
+ 
+        	try {
+            	$this->exportCsvFile();
+        	} catch (\Exception $e) {
+            	$output->writeln($e->getMessage());
+        	}
+	
+        } else {
+            $output->writeln("Missing store Id. Please run jmc:export:products <store-id>");
+            $output->writeln("To identify the store id you can run the command store:list");
         }
     }
     
@@ -116,32 +116,28 @@ class Export extends Command
     {
         $exportData = [];
 
-        $categories = $this->collection->create()                              
+        $products = $this->collection->create()                              
             ->addAttributeToSelect('*')
-            ->addAttributeToFilter('is_active','1');
-            
-        if ($this->storeId) {
-            $storeId = (int) $this->storeId;
-        	$categories->setStore($this->storeManager->getStore($storeId));
-        }
+            ->addStoreFilter($this->storeId);
 
-        if(count($categories) > 0){
-            foreach ($categories as $category) {
+        if(count($products) > 0){
+            foreach ($products as $product) {
                 $exportData[] = [
-                    $category->getId(),
-                    $this->getUrlPathWithSuffix($category)
+                    $product->getId(),
+                    'product',
+                    $this->getUrlPathWithSuffix($product)
                 ];
             }
-            $this->csv->saveData("var/categories.csv" , $exportData);
+            $this->csv->saveData("var/products.csv" , $exportData);
         }
     }
     
     /**
-     * @param \Magento\Catalog\Model\Category $category
+     * @param \Magento\Catalog\Model\Product $product
      * @return string
      */
-    private function getUrlPathWithSuffix($category)
+    private function getUrlPathWithSuffix($product)
     {
-        return $this->categoryUrlPathGenerator->getUrlPathWithSuffix($category);
+        return $this->productUrlPathGenerator->getUrlPathWithSuffix($product, $this->storeId);
     }
 }

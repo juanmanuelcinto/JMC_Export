@@ -5,5 +5,5 @@
  */
 use Magento\Framework\Component\ComponentRegistrar;
 
-ComponentRegistrar::register(ComponentRegistrar::MODULE, 'JMC_ExportCategories', __DIR__);
+ComponentRegistrar::register(ComponentRegistrar::MODULE, 'JMC_Export', __DIR__);
 
