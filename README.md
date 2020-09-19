@@ -1,4 +1,4 @@
-# Magento 2 ExportCategories By Juan Manuel Cinto
+# Magento 2 Export (Categories and products) By Juan Manuel Cinto
 
     ``jmc/module-export``
 
