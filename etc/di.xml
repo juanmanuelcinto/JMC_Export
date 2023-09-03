@@ -1,10 +1,20 @@
-<?xml version="1.0" ?>
+<?xml version="1.0"?>
+<!--
+/**
+ * Copyright © Magento, Inc. All rights reserved.
+ * See COPYING.txt for license details.
+ */
+-->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
-    <type name="Magento\Framework\Console\CommandList">
+    <preference for="JMC\Export\Model\Export\CategoriesCollectionFactoryInterface" type="JMC\Export\Model\Export\CategoriesCollectionFactory"/>
+    <preference for="JMC\Export\Model\Export\ColumnProviderInterface" type="JMC\Export\Model\Export\ColumnProvider"/>
+    <type name="JMC\Export\Model\Export\FilterProcessorAggregator">
         <arguments>
-            <argument name="commands" xsi:type="array">
-                <item name="categories" xsi:type="object">JMC\Export\Console\Command\Categories\Export</item>
-                <item name="products" xsi:type="object">JMC\Export\Console\Command\Products\Export</item>
+            <argument name="handler" xsi:type="array">
+                <item name="int" xsi:type="object">JMC\Export\Model\Export\Filter\IntFilter</item>
+                <item name="decimal" xsi:type="object">JMC\Export\Model\Export\Filter\IntFilter</item>
+                <item name="varchar" xsi:type="object">JMC\Export\Model\Export\Filter\VarcharFilter</item>
+                <item name="datetime" xsi:type="object">JMC\Export\Model\Export\Filter\DatetimeFilter</item>
             </argument>
         </arguments>
     </type>
